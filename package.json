@@ -4,13 +4,17 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node index.ts"
+    "start": "ts-node -r tsconfig-paths/register index.ts",
+    "build": "tsc --project tsconfig.json --outDir dist"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
     "@types/node": "^24.0.15",
+    "googleapis": "^153.0.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {

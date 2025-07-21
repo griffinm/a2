@@ -1,9 +1,16 @@
-export type ConfigKeys = 'googleSearchApiKey' | 'googleSearchId' | 'loggerLevel';
+export type ConfigKeys = 
+  'googleSearchApiKey' |
+  'googleSearchId' |
+  'loggerLevel' |
+  'redisUrl' |
+  'ollamaUrl';
 
 type ConfigType = {
   googleSearchApiKey: string;
   googleSearchId: string;
   loggerLevel: string;
+  redisUrl: string;
+  ollamaUrl: string;
 };
 
 export class Config {
@@ -14,6 +21,8 @@ export class Config {
       googleSearchApiKey: process.env.GOOGLE_SEARCH_API_KEY || '',
       googleSearchId: process.env.GOOGLE_SEARCH_ID || '',
       loggerLevel: process.env.LOGGER_LEVEL || 'info',
+      redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+      ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
     }
 
     // The Google Search API Key and ID are required

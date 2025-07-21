@@ -1,17 +1,24 @@
 import { createClient } from "redis";
-import { Logger } from "./Logger";
+import { Logger } from "@/Logger";
+import { Config } from "@/Config";
 
 export class Redis {
   private static client: ReturnType<typeof createClient>;
   private logger: Logger;
   private connected: boolean;
+  private config: Config;
 
-  constructor() {
+  constructor({
+    config,
+  }: {
+    config: Config;
+  }) {
     this.logger = new Logger(this.constructor.name);
+    this.config = config;
     this.logger.debug("Connecting to Redis");
     this.connected = false;
     Redis.client = createClient({
-      url: "redis://localhost:6379",
+      url: this.config.getConfig('redisUrl'),
     });
 
     this.connect();
