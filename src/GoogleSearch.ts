@@ -48,6 +48,9 @@ export class GoogleSearch {
   }
 
   private parseResults(data: any): GoogleSearchResult[] {
+    if (!data.items || !Array.isArray(data.items)) {
+      return [];
+    }
     return data.items.map((item: any) => ({
       kind: item.kind,
       title: item.title,

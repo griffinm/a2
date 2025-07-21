@@ -3,11 +3,14 @@ import { Logger } from '@/Logger';
 import { Redis } from '@/Redis';
 import { Config } from '@/Config';
 import 'dotenv/config';
+import { LangChain } from '@/LangChain';
+import { Ollama } from '@/Ollama';
 
 let googleSearch: GoogleSearch;
 let redis: Redis;
 const config = new Config();
 const logger = new Logger("main");
+const ollama = new Ollama({ config });
 
 async function initServices() {
   logger.info("Initializing services");
@@ -29,9 +32,10 @@ async function shutdownServices() {
 async function main() {
   await initServices();
   
-  const results = await googleSearch.search('griffin');
-  logger.info(`Found ${results.length} results`);
-  logger.info(JSON.stringify(results, null, 2));
+  const task = "What is the best way to not smell bad?"
+  const langChain = new LangChain({ googleSearch, ollama });
+  const results = await langChain.runResearchAgent(task);
+  logger.info(results);
   await shutdownServices();
 }
 
