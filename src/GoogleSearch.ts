@@ -11,9 +11,9 @@ export class GoogleSearch {
   private searchId: string;
   private redis: Redis;
 
-  constructor() {
+  constructor({ redis }: { redis: Redis }) {
     this.logger = new Logger(this.constructor.name);
-    this.redis = new Redis();
+    this.redis = redis;
     const config = new Config();
     this.apiKey = config.getConfig('googleSearchApiKey');
     this.searchId = config.getConfig('googleSearchId');
