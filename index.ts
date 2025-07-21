@@ -7,9 +7,9 @@ const logger = new Logger("main");
 async function main() {
   const googleSearch = new GoogleSearch();
 
-  logger.debug('Application Starting');
+  logger.info('Application Starting');
   const results = await googleSearch.search('TypeScript');
-  // logger.info(`Found ${results.items.length} results`);
+  logger.info(`Found ${results.items.length} results`);
   // logger.info(JSON.stringify(results, null, 2));
 }
 
