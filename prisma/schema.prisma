@@ -27,7 +27,8 @@ enum Tool {
 }
 
 enum StepType {
-  FOUNDATIONAL
+  PLANNING
+  TOOL_SELECTION
   WEB_SEARCH
   LLM
 }
@@ -56,12 +57,14 @@ model Step {
   tool      Tool? @map("tool")
   description    String @map("description")
   response  String? @map("response")
-  startedAt DateTime @map("started_at")
+  startedAt DateTime? @map("started_at")
   endedAt   DateTime? @map("ended_at")
   status    TaskStatus @default(PENDING) @map("status")
-  stepType  StepType @default(FOUNDATIONAL) @map("step_type")
+  stepType  StepType @map("step_type")
   stepNumber Int @default(0) @map("step_number")
   outputSchema Json? @map("output_schema")
-
+  parentStepId String? @map("parent_step_id")
+  childrenSteps Step[] @relation("ParentStep")
+  parentStep  Step? @relation("ParentStep", fields: [parentStepId], references: [id])
   @@map("steps")
 }

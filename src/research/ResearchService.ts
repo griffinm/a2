@@ -3,7 +3,7 @@ import { Config } from "../Config";
 import { DB } from "../DB";
 import { Query, Step, StepType, TaskStatus, Tool } from "../generated/prisma";
 import { Logger } from "../Logger";
-import { getStepPrompt, getStepPromptFormat, getToolPrompt, getToolPromptFormat } from "./promptUtils";
+import { getLlmStepPrompt, getLlmStepPromptFormat, getStepPrompt, getStepPromptFormat, getToolPrompt, getToolPromptFormat } from "./promptUtils";
 import { JsonObject } from "@prisma/client/runtime/library";
 import z from "zod";
 import { JsonGetValueTool } from "langchain/tools";
@@ -51,8 +51,48 @@ export class ResearchService {
     await this.createAndRunPlanStep();
     await this.createAndRunToolSelectionStep();
     await this.runAllSteps();
+    await this.createPostPlanningSteps();
+    await this.runAllSteps();
 
     return q;
+  }
+
+  public async createPostPlanningSteps() {
+    // Find all of the tool selection steps without associated child steps
+    const toolSelectionSteps = await this.db.getClient().step.findMany({
+      where: {
+        queryId: this.queryId!,
+        stepType: StepType.TOOL_SELECTION,
+        childrenSteps: {
+          none: {},
+        },
+      },
+    });
+    this.logger.info(`Creating steps from planning steps. Found ${toolSelectionSteps.length} tool selection steps.`);
+
+    // Create a new task for each tool selection step
+    for (const toolSelectionStep of toolSelectionSteps) {
+      const stepPrompt = getLlmStepPrompt({ currentStepText: toolSelectionStep.description, originalQuery: this.query?.value || "" });
+      const lastStepNumber = await this.db.getClient().step.findFirst({
+        where: { queryId: this.queryId! },
+        orderBy: { stepNumber: "desc" },
+        select: { stepNumber: true },
+      });
+
+      await this.db.getClient().step.create({
+        data: {
+          queryId: this.queryId!,
+          tool: Tool.LLM,
+          description: stepPrompt,
+          parentStepId: toolSelectionStep.id,
+          status: TaskStatus.PENDING,
+          stepType: toolSelectionStep.tool === Tool.LLM ? StepType.LLM : StepType.WEB_SEARCH,
+          stepNumber: lastStepNumber?.stepNumber ? lastStepNumber.stepNumber + 1 : 1,
+        },
+      });
+    }
+
+    this.logger.info(`Created ${toolSelectionSteps.length} steps from planning steps.`);
   }
 
   private async createAndRunToolSelectionStep() {
@@ -88,9 +128,10 @@ export class ResearchService {
           description: stepPrompt,
           startedAt: new Date(),
           status: TaskStatus.PENDING,
-          stepType: StepType.LLM,
+          stepType: StepType.TOOL_SELECTION,
           stepNumber: currentStepIndex + 1,
           outputSchema: getToolPromptFormat() as any,
+          parentStepId: planningResult?.id,
         },
       });
       currentStepIndex = currentStepIndex + 1;
@@ -110,7 +151,7 @@ export class ResearchService {
         description: getStepPrompt({ query: this.query?.value || "" }),
         startedAt: new Date(),
         status: TaskStatus.PENDING,
-        stepType: StepType.FOUNDATIONAL,
+        stepType: StepType.PLANNING,
         stepNumber: 1,
         outputSchema: getStepPromptFormat() as any,
       },
@@ -124,13 +165,6 @@ export class ResearchService {
     }
 
     this.logger.info(`Running all steps for query ${this.queryId}`);
-    await this.db.getClient().query.update({
-      where: { id: this.queryId },
-      data: {
-        status: TaskStatus.RUNNING,
-        startedAt: new Date(),
-      },
-    });
     let currentStep: Step | null = null;
     do {
       currentStep = await this.getNextStep();
@@ -139,22 +173,7 @@ export class ResearchService {
         break;
       }
 
-      // Update the step to running
-      await this.db.getClient().step.update({
-        where: { id: currentStep.id },
-        data: { status: TaskStatus.RUNNING },
-      });
-
       const response = await this.runStep({ step: currentStep });
-
-      // Update the step to completed
-      await this.db.getClient().step.update({
-        where: { id: currentStep.id },
-        data: {
-          response: response.response,
-          status: TaskStatus.COMPLETED,
-        },
-      });
 
       this.logger.info(`Step ${currentStep.stepNumber} completed`);
       currentStep = await this.getNextStep();
@@ -165,12 +184,17 @@ export class ResearchService {
       where: { id: this.queryId },
       data: {
         status: TaskStatus.COMPLETED,
-        endedAt: new Date(),
       },
     });
   }
 
   private async runStep({ step }: { step: Step }): Promise<Step> {
+    // Update the step to running
+    await this.db.getClient().step.update({
+      where: { id: step.id },
+      data: { status: TaskStatus.RUNNING, startedAt: new Date() },
+    });
+
     if (step.tool === Tool.LLM) {
       let format: JsonObject | undefined = undefined;
       if (step.outputSchema && typeof step.outputSchema === "object" && !Array.isArray(step.outputSchema)) {
@@ -182,7 +206,7 @@ export class ResearchService {
       });
 
       // Mark the step as completed
-      return await this.db.getClient().step.update({
+      const updatedStep =  await this.db.getClient().step.update({
         where: { id: step.id },
         data: {
           response,
@@ -190,6 +214,8 @@ export class ResearchService {
           endedAt: new Date(),
         },
       });
+
+      return updatedStep;
     } else if (step.tool === Tool.WEB_SEARCH) {
       this.logger.error(`Web search for step ${step.stepNumber} is not implemented`);
     } else {

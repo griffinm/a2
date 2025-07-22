@@ -2,6 +2,33 @@ import { Step } from "@prisma/client";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
+export function getLlmStepPrompt({ currentStepText, originalQuery }: { currentStepText: string, originalQuery: string }) {
+  return `
+    #Task:
+    You are a meticulous and helpful researcher. A research task has been broken down into steps and you will be given one of the steps.
+    Your job is to research the step and provide a detailed response.
+
+    #Guidelines:
+    - Output a detailed response to the step.
+    - Use clear, objective language for each step.
+    - Do not include the answer — only the research or reasoning steps required to find it.
+
+    #Original Research Task
+    ${originalQuery}
+
+    #Step for you to provide a response to:
+    ${currentStepText}
+  `;
+}
+
+export function getLlmStepPromptFormat() {
+  const llmStepSchema = z.object({
+    response: z.string(),
+  });
+  const jsonSchema = zodToJsonSchema(llmStepSchema);
+  return jsonSchema.definitions?.LlmStepSchema || jsonSchema;
+}
+
 export function getStepPrompt({ query }: { query: string }) {
   return `
     #Task:

@@ -40,7 +40,6 @@ export class Ollama {
       stream: false,
       format,
     });
-  
     this.logger.debug(`Sending prompt to Ollama`);
     const response = await fetch(url, {
       method: 'POST',
