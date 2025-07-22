@@ -5,6 +5,21 @@ services:
       - 6379:6379
     volumes:
       - redis_data:/data
+  postgres:
+    image: postgres:17.3-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=griffin
+      - POSTGRES_PASSWORD=griffin
+      - POSTGRES_DB=a2
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "a2"]
+      interval: 10s
+      timeout: 5s
 
 volumes:
   redis_data:
+  postgres_data:

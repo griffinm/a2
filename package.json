@@ -13,15 +13,20 @@
   "devDependencies": {
     "@types/node": "^24.0.15",
     "googleapis": "^153.0.0",
+    "prisma": "^6.12.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@prisma/client": "^6.12.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.0",
     "langchain": "^0.3.30",
+    "ollama": "^0.5.16",
     "redis": "^5.6.0",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.24.6"
   }
 }

@@ -18,7 +18,7 @@ export class Logger {
         winston.format.colorize({ all: true }),
         winston.format.printf(({ timestamp, level, message }) => {
           const date = formatDate(new Date(timestamp as Date), 'MM/dd/yyyy HH:mm:ss.SSS');
-          return `${date} ${level} [\x1b[34m${this.className}\x1b[0m] ${message}`;
+          return `${date} [\x1b[34m${this.className}\x1b[0m] [\x1b[32m${level}\x1b[0m] ${message}`;
         })
       ),
       transports: [new winston.transports.Console({ level: config.getConfig('loggerLevel') })],

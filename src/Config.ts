@@ -3,7 +3,8 @@ export type ConfigKeys =
   'googleSearchId' |
   'loggerLevel' |
   'redisUrl' |
-  'ollamaUrl';
+  'ollamaUrl' |
+  'databaseUrl';
 
 type ConfigType = {
   googleSearchApiKey: string;
@@ -11,6 +12,7 @@ type ConfigType = {
   loggerLevel: string;
   redisUrl: string;
   ollamaUrl: string;
+  databaseUrl: string;
 };
 
 export class Config {
@@ -23,6 +25,7 @@ export class Config {
       loggerLevel: process.env.LOGGER_LEVEL || 'info',
       redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
       ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
+      databaseUrl: process.env.DATABASE_URL || 'postgresql://localhost:5432/a2',
     }
 
     // The Google Search API Key and ID are required

@@ -1,5 +1,7 @@
 import { Logger } from "@/Logger";
 import { Config } from "@/Config";
+import { JsonObject } from "./generated/prisma/runtime/library";
+import z from "zod";
 
 export class Ollama {
   private logger: Logger;
@@ -24,17 +26,22 @@ export class Ollama {
   public async generateCompletion({
     prompt,
     model = 'gemma3:27b',
+    format,
   }: {
     prompt: string;
     model?: string;
+    format?: JsonObject;
   }): Promise<string> {
     const url = `${this.ollamaUrl}/api/generate`;
+
     const body = JSON.stringify({
       model,
       prompt,
-      stream: false
+      stream: false,
+      format,
     });
-    this.logger.debug(`Sending prompt to Ollama: ${prompt}`);
+  
+    this.logger.debug(`Sending prompt to Ollama`);
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -46,7 +53,7 @@ export class Ollama {
       throw new Error(`Ollama API error: ${response.status}`);
     }
     const data = await response.json();
-    // Ollama returns { response: string, ... }
+
     return data.response;
   }
 }

@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum Tool {
+  LLM
+  WEB_SEARCH
+}
+
+enum StepType {
+  FOUNDATIONAL
+  WEB_SEARCH
+  LLM
+}
+
+model Query {
+  id        String   @id @default(uuid()) @map("id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  value     String @map("value")
+  response  String? @map("response")
+  startedAt DateTime? @map("started_at")
+  endedAt   DateTime? @map("ended_at")
+  status    TaskStatus @default(PENDING) @map("status")
+
+  steps     Step[]
+
+  @@map("queries")
+}
+
+model Step {
+  id        String   @id @default(uuid()) @map("id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  queryId   String   @map("query_id")
+  query     Query    @relation(fields: [queryId], references: [id])
+  tool      Tool? @map("tool")
+  description    String @map("description")
+  response  String? @map("response")
+  startedAt DateTime @map("started_at")
+  endedAt   DateTime? @map("ended_at")
+  status    TaskStatus @default(PENDING) @map("status")
+  stepType  StepType @default(FOUNDATIONAL) @map("step_type")
+  stepNumber Int @default(0) @map("step_number")
+  outputSchema Json? @map("output_schema")
+
+  @@map("steps")
+}
